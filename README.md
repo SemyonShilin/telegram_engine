@@ -10,7 +10,7 @@ by adding `telegram` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:telegram, "~> 0.1.0"}
+    {:telegram_engine, "~> 0.1.0"}
   ]
 end
 ```
