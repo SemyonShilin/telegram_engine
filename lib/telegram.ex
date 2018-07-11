@@ -7,6 +7,7 @@ defmodule Engine.Telegram do
   alias Agala.Bot.Handler
   alias Engine.Telegram.{MessageSender, RequestHandler}
   use Agala.Provider.Telegram, :handler
+  alias Engine.BotLogger
 
   use GenServer
 
@@ -19,11 +20,13 @@ defmodule Engine.Telegram do
   end
 
   def init(opts) do
-    case Keyword.get(@engine_telegram, :method) do
+    case method = Keyword.get(@engine_telegram, :method) do
       :webhook -> set_webhook(opts)
       :polling -> nil
       _ -> nil
     end
+
+    BotLogger.info("Telegram bot #{opts.name} started. Method: #{method}")
 
     {:ok, opts}
   end
@@ -34,6 +37,19 @@ defmodule Engine.Telegram do
 
   def message_pass(bot_name, message) do
     GenServer.cast(:"#Engine.Telegram::#{bot_name}", {:message, message})
+  end
+
+  def pre_down(bot_name) do
+    GenServer.call(:"#Engine.Telegram::#{bot_name}", :delete_webhook)
+  end
+
+  def handle_call(:delete_webhook, _from, state) do
+    case Keyword.get(@engine_telegram, :method) do
+      :webhook ->  delete_webhook(state) |> BotLogger.info()
+      :polling -> BotLogger.info("Nothing to do because method polling")
+      _ -> BotLogger.info( "Nothing to do")
+    end
+    {:reply, :ok, state}
   end
 
   def handle_cast({:message, message}, state) do
@@ -59,6 +75,7 @@ defmodule Engine.Telegram do
       [{"Content-Type", "application/json"}]
     )
     |> parse_body
+#    |> resolve_updates(params)
   end
 
   def delete_webhook(%BotParams{name: bot_name} = params) do
@@ -70,6 +87,7 @@ defmodule Engine.Telegram do
       [{"Content-Type", "application/json"}]
     )
     |> parse_body
+    |> resolve_updates(params)
   end
 
   def base_url(conn) do
@@ -100,9 +118,14 @@ defmodule Engine.Telegram do
     {:multipart, multipart}
   end
 
-  defp webhook_upload_body(conn, opts \\ []),
-       do: create_body_multipart(%{certificate: {:file, @certificate},
-         url: server_webhook_url(conn)}, opts)
+  defp webhook_upload_body(conn, opts \\ []) do
+    case @certificate do
+      nil  -> %{url: server_webhook_url(conn)}
+      path -> %{certificate: {:file, path},
+                url: server_webhook_url(conn)}
+    end
+    |> create_body_multipart(opts)
+  end
 
   defp parse_body({:ok, resp = %HTTPoison.Response{body: body}}),
        do: {:ok, %HTTPoison.Response{resp | body: Poison.decode!(body)}}
@@ -111,4 +134,26 @@ defmodule Engine.Telegram do
 
   defp server_webhook_url(conn),
        do: @url || "" <> conn.request_bot_params.provider_params.token
+
+  defp resolve_updates(
+         {
+           :ok,
+           %HTTPoison.Response{
+             status_code: 200,
+             body: %{"ok" => true, "result" => true, "description" => description}
+           }
+         },
+         _bot_params
+       ), do: description
+
+  defp resolve_updates(
+         {
+           :ok,
+           %HTTPoison.Response{
+             status_code: 200,
+             body: %{"ok" => true, "result" => result}
+           }
+         },
+         bot_params
+       ), do: bot_params
 end

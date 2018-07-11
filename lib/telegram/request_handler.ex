@@ -7,14 +7,21 @@ defmodule Engine.Telegram.RequestHandler do
   alias Agala.BotParams
   alias Engine.Telegram.MessageSender
   alias Engine.Telegram.Model.{InlineKeyboardMarkup, InlineKeyboardButton}
+  alias Engine.BotLogger
 
   chain(Agala.Provider.Telegram.Chain.Parser)
 
+  chain(:logging_incoming_message_handler)
   chain(:find_bot_handler)
   chain(:send_messege_to_hub_handler)
   chain(:parse_hub_response_handler)
   chain(:delivery_hub_response_handler)
-  chain(:handle)
+
+  def logging_incoming_message_handler(%Conn{request: request} = conn, _opts) do
+    BotLogger.info("You have just received message. #{format_request_for_log(request)}")
+
+    conn
+  end
 
   def find_bot_handler(%Conn{
     request_bot_params: %BotParams{storage: storage, provider_params: %{token: token}} = bot_params} = conn,
@@ -28,7 +35,6 @@ defmodule Engine.Telegram.RequestHandler do
   def send_messege_to_hub_handler(%Conn{
     request_bot_params: %Agala.BotParams{storage: storage} = bot_params,
     request: request} = conn, _opts) do
-    log(request)
 
     bot = storage.get(bot_params, :bot)
     %{"data" => response} =
@@ -58,11 +64,6 @@ defmodule Engine.Telegram.RequestHandler do
     conn |> MessageSender.delivery(storage.get(bot_params, :messages))
 
     conn
-  end
-
-  def handle(conn, _opts) do
-    IO.puts("----> You have just received message <----")
-    Conn.halt(conn)
   end
 
   defp call_hub(message) do
@@ -141,5 +142,13 @@ defmodule Engine.Telegram.RequestHandler do
   defp adapter_bot do
     :telegram_engine
     |> Application.get_env(:get_bot_fn)
+  end
+
+  defp format_request_for_log(%{message: %{text: text, from: %{first_name: first_name, id: user_telegrma_id}}}) do
+    "#{first_name} #{user_telegrma_id} : #{text}"
+  end
+
+  defp format_request_for_log(%{callback_query: %{data: data, from: %{first_name: first_name, id: user_telegrma_id}}}) do
+    "#{first_name} #{user_telegrma_id} : button - #{data}"
   end
 end
