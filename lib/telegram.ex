@@ -20,7 +20,8 @@ defmodule Engine.Telegram do
   end
 
   def init(opts) do
-    case method = Keyword.get(@engine_telegram, :method) do
+    method = Keyword.get(@engine_telegram, :method)
+    case method do
       :webhook -> set_webhook(opts)
       :polling -> nil
       _ -> nil
