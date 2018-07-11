@@ -20,14 +20,13 @@ defmodule Engine.Telegram do
   end
 
   def init(opts) do
-    method = Keyword.get(@engine_telegram, :method)
-    case method do
-      :webhook -> set_webhook(opts)
-      :polling -> nil
+    case method = Keyword.get(@engine_telegram, :method) do
+      :webhook ->
+        set_webhook(opts) |> IO.inspect
+        BotLogger.info("Telegram bot #{opts.name} started. Method: #{method}")
+      :polling -> BotLogger.info("Telegram bot #{opts.name} started. Method: #{method}")
       _ -> nil
     end
-
-    BotLogger.info("Telegram bot #{opts.name} started. Method: #{method}")
 
     {:ok, opts}
   end
