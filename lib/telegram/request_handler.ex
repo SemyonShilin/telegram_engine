@@ -25,7 +25,7 @@ defmodule Engine.Telegram.RequestHandler do
   def find_bot_handler(%Conn{
     request_bot_params: %BotParams{storage: storage, provider_params: %{token: token}} = bot_params} = conn,
   _opts) do
-    bot = adapter_bot.(token)
+    bot = adapter_bot(token)
     storage.set(bot_params, :bot, bot)
 
     conn
@@ -138,8 +138,9 @@ defmodule Engine.Telegram.RequestHandler do
     IO.puts "#{first_name} #{user_telegrma_id} : button - #{data}"
   end
 
-  defp adapter_bot do
-    fn (token) -> Adapter.Bots.get_by_bot(%{token: token}) end
+  defp adapter_bot(token) do
+    Adapter.Bots.get_by_bot(%{token: token})
+#    fn (token) -> Adapter.Bots.get_by_bot(%{token: token}) end
   end
 
   defp format_request_for_log(%{message: %{text: text, from: %{first_name: first_name, id: user_telegrma_id}}}) do
