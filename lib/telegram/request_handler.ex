@@ -5,9 +5,8 @@ defmodule Engine.Telegram.RequestHandler do
   use Agala.Provider.Telegram, :handler
   alias Agala.Conn
   alias Agala.BotParams
-  alias Engine.Telegram.MessageSender
+  alias Engine.Telegram.{MessageSender, BotLogger}
   alias Engine.Telegram.Model.{InlineKeyboardMarkup, InlineKeyboardButton}
-  alias Engine.BotLogger
 
   chain(Agala.Provider.Telegram.Chain.Parser)
 

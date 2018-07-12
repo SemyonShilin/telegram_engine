@@ -5,9 +5,8 @@ defmodule Engine.Telegram do
 
   alias Agala.{BotParams, Conn}
   alias Agala.Bot.Handler
-  alias Engine.Telegram.{MessageSender, RequestHandler}
+  alias Engine.Telegram.{MessageSender, RequestHandler, BotLogger}
   use Agala.Provider.Telegram, :handler
-  alias Engine.BotLogger
 
   use GenServer
 

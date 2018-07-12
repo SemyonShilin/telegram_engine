@@ -6,7 +6,7 @@ defmodule Engine.Telegram.MessageSender do
   alias Agala.Provider.Telegram.Helpers
   alias Agala.Conn
   alias Agala.BotParams
-  alias Engine.BotLogger
+  alias Engine.Telegram.BotLogger
 
   def delivery(%Conn{request_bot_params: bot_params, request: %{message: %{from: %{id: id}}}} = _conn, messages) do
     messages
