@@ -139,8 +139,7 @@ defmodule Engine.Telegram.RequestHandler do
   end
 
   defp adapter_bot do
-    :telegram_engine
-    |> Application.get_env(:get_bot_fn)
+    fn (token) -> Adapter.Bots.get_by_bot(%{token: token}) end
   end
 
   defp format_request_for_log(%{message: %{text: text, from: %{first_name: first_name, id: user_telegrma_id}}}) do
