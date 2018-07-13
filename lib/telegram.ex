@@ -3,9 +3,11 @@ defmodule Engine.Telegram do
     The module set webhook for the telegram bots and sends custom messages
   """
 
+  @telegram_engine Application.get_env(:telegram_engine, Engine.Telegram)
+
   alias Agala.{BotParams, Conn}
   alias Agala.Bot.Handler
-  alias Engine.Telegram.{MessageSender, RequestHandler, BotLogger}
+  alias Engine.Telegram.{MessageSender, RequestHandler}
   use Agala.Provider.Telegram, :handler
 
   use GenServer
@@ -22,8 +24,8 @@ defmodule Engine.Telegram do
     case method = Keyword.get(@engine_telegram, :method) do
       :webhook ->
         set_webhook(opts) |> IO.inspect
-        BotLogger.info("Telegram bot #{opts.name} started. Method: #{method}")
-      :polling -> BotLogger.info("Telegram bot #{opts.name} started. Method: #{method}")
+        logger().info("Telegram bot #{opts.name} started. Method: #{method}")
+      :polling -> logger().info("Telegram bot #{opts.name} started. Method: #{method}")
       _ -> nil
     end
 
@@ -44,9 +46,9 @@ defmodule Engine.Telegram do
 
   def handle_call(:delete_webhook, _from, state) do
     case Keyword.get(@engine_telegram, :method) do
-      :webhook ->  delete_webhook(state) |> BotLogger.info()
-      :polling -> BotLogger.info("Nothing to do because method polling")
-      _ -> BotLogger.info( "Nothing to do")
+      :webhook ->  delete_webhook(state) |> logger().info()
+      :polling -> logger().info("Nothing to do because method polling")
+      _ -> logger().info( "Nothing to do")
     end
     {:reply, :ok, state}
   end
@@ -99,6 +101,11 @@ defmodule Engine.Telegram do
 
   def delete_webhook_url(conn) do
     base_url(conn) <> "/deleteWebhook"
+  end
+
+  def logger do
+    @telegram_engine
+    |> Keyword.get(:logger)
   end
 
   defp create_body(map, opts) when is_map(map) do

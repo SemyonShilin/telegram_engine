@@ -6,7 +6,7 @@ defmodule Engine.Telegram.MessageSender do
   alias Agala.Provider.Telegram.Helpers
   alias Agala.Conn
   alias Agala.BotParams
-  alias Engine.Telegram.BotLogger
+  alias Engine.Telegram
 
   def delivery(%Conn{request_bot_params: bot_params, request: %{message: %{from: %{id: id}}}} = _conn, messages) do
     messages
@@ -58,14 +58,14 @@ defmodule Engine.Telegram.MessageSender do
 
   defp message_fallback(%Conn{fallback: %{"result" => %{"from" => %{"first_name" => first_name, "id" => id, "is_bot" => is_bot}, "text" => text}}} = _conn) do
     bot_postfix = if is_bot, do: "Bot", else: ""
-    BotLogger.info("You have just sent message. #{first_name} #{bot_postfix} #{id} : #{text}")
+    Telegram.logger().info("You have just sent message. #{first_name} #{bot_postfix} #{id} : #{text}")
   end
 
   defp message_fallback(%Conn{fallback: {:error, error}} = _conn) do
-    BotLogger.info("You have just get error HTTPoison. #{inspect(error)}")
+    Telegram.logger().info("You have just get error HTTPoison. #{inspect(error)}")
   end
 
   defp message_fallback(%Conn{fallback: %{"description" => error}} = _conn) do
-    BotLogger.info("You have just get error response. #{inspect(error)}")
+    Telegram.logger().info("You have just get error response. #{inspect(error)}")
   end
 end
