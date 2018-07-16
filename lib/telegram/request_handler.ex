@@ -26,7 +26,7 @@ defmodule Engine.Telegram.RequestHandler do
   def find_bot_handler(%Conn{
     request_bot_params: %BotParams{storage: storage, provider_params: %{token: token}} = bot_params} = conn,
   _opts) do
-    bot = adapter_bot.(token)
+    bot = adapter_bot().(token)
     storage.set(bot_params, :bot, bot)
 
     conn
@@ -40,7 +40,7 @@ defmodule Engine.Telegram.RequestHandler do
     %{"data" => response} =
       %{data: request}
       |> Map.merge(%{platform: "telegram", uid: bot.uid})
-      |> call_hub()
+      |> call_hub().()
 
     storage.set(bot_params, :response, response)
 
@@ -64,18 +64,6 @@ defmodule Engine.Telegram.RequestHandler do
     conn |> MessageSender.delivery(storage.get(bot_params, :messages))
 
     conn
-  end
-
-  defp call_hub(message) do
-    HTTPoison.start
-    with {:ok, %HTTPoison.Response{body: body}} =
-           HTTPoison.post(
-             System.get_env("DCH_POST"),
-             Poison.encode!(message),
-             [{"Content-Type", "application/json"}]
-           ) do
-      Poison.decode!(body)
-    end
   end
 
   def parse_hub_response(messages) do
@@ -135,6 +123,12 @@ defmodule Engine.Telegram.RequestHandler do
     with get_bot_fn <- Application.get_env(:telegram_engine, :get_bot_fn),
          {func, _}  <- Code.eval_string(get_bot_fn) do
       func
+    end
+  end
+
+  def call_hub do
+    fn message ->
+      Application.get_env(:telegram_engine, :hub_client).call(message)
     end
   end
 
