@@ -3,8 +3,6 @@ defmodule Engine.Telegram do
     The module set webhook for the telegram bots and sends custom messages
   """
 
-  @telegram_engine Application.get_env(:telegram_engine, Engine.Telegram)
-
   alias Agala.{BotParams, Conn}
   alias Agala.Bot.Handler
   alias Engine.Telegram.{MessageSender, RequestHandler}
@@ -14,14 +12,16 @@ defmodule Engine.Telegram do
 
   @certificate     :agala_telegram  |> Application.get_env(:certificate)
   @url             :agala_telegram  |> Application.get_env(:url)
-  @engine_telegram :telegram_engine |> Application.get_env(Engine.Telegram)
+  @telegram_engine :telegram_engine |> Application.get_env(Engine.Telegram)
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, [name: :"#Engine.Telegram::#{opts.name}"])
   end
 
   def init(opts) do
-    case method = Keyword.get(@engine_telegram, :method) do
+    logger().info("Telegram bot #{opts.name} starts with this config: #{inspect(@telegram_engine)}")
+
+    case method = Keyword.get(@telegram_engine, :method) do
       :webhook ->
         set_webhook(opts) |> IO.inspect
         logger().info("Telegram bot #{opts.name} started. Method: #{method}")
@@ -45,7 +45,7 @@ defmodule Engine.Telegram do
   end
 
   def handle_call(:delete_webhook, _from, state) do
-    case Keyword.get(@engine_telegram, :method) do
+    case Keyword.get(@telegram_engine, :method) do
       :webhook ->  delete_webhook(state) |> logger().info()
       :polling -> logger().info("Nothing to do because method polling")
       _ -> logger().info( "Nothing to do")
@@ -106,6 +106,16 @@ defmodule Engine.Telegram do
   def logger do
     @telegram_engine
     |> Keyword.get(:logger)
+  end
+
+  def hub_client do
+    @telegram_engine
+    |> Keyword.get(:hub_client)
+  end
+
+  def get_bot_fn do
+    @telegram_engine
+    |> Keyword.get(:get_bot_fn)
   end
 
   defp create_body(map, opts) when is_map(map) do

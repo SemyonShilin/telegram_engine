@@ -120,7 +120,7 @@ defmodule Engine.Telegram.RequestHandler do
   end
 
   defp adapter_bot() do
-    with get_bot_fn <- Application.get_env(:telegram_engine, :get_bot_fn),
+    with get_bot_fn <- Telegram.get_bot_fn(),
          {func, _}  <- Code.eval_string(get_bot_fn) do
       func
     end
@@ -128,7 +128,7 @@ defmodule Engine.Telegram.RequestHandler do
 
   def call_hub do
     fn message ->
-      Application.get_env(:telegram_engine, :hub_client).call(message)
+      Telegram.hub_client().call(message)
     end
   end
 
