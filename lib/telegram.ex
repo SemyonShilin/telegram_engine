@@ -23,7 +23,7 @@ defmodule Engine.Telegram do
 
     case method = Keyword.get(@telegram_engine, :method) do
       :webhook ->
-        set_webhook(opts) |> IO.inspect
+        set_webhook(opts) |> IO.puts
         logger().info("Telegram bot #{opts.name} started. Method: #{method}")
       :polling -> logger().info("Telegram bot #{opts.name} started. Method: #{method}")
       _ -> nil
@@ -46,9 +46,10 @@ defmodule Engine.Telegram do
 
   def handle_call(:delete_webhook, _from, state) do
     case Keyword.get(@telegram_engine, :method) do
-      :webhook ->  delete_webhook(state) |> logger().info()
+      :webhook ->
+        state |> delete_webhook() |> logger().info()
       :polling -> logger().info("Nothing to do because method polling")
-      _ -> logger().info( "Nothing to do")
+      _ -> logger().info("Nothing to do")
     end
     {:reply, :ok, state}
   end
