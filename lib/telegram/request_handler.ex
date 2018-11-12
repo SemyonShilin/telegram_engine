@@ -14,9 +14,8 @@ defmodule Engine.Telegram.RequestHandler do
   chain(:logging_incoming_message_handler)
   chain(:find_bot_handler)
   chain(:send_messege_to_hub_handler)
-#  chain(:parse_hub_response_handler)
-#  chain(:delivery_hub_response_handler)
-  chain(:second_handle)
+  chain(:parse_hub_response_handler)
+  chain(:delivery_hub_response_handler)
 
   def logging_incoming_message_handler(%Conn{request: request} = conn, _opts) do
     Telegram.logger().info("You have just received message. #{format_request_for_log(request)}")
@@ -64,11 +63,6 @@ defmodule Engine.Telegram.RequestHandler do
   def delivery_hub_response_handler(%Conn{request_bot_params: %{storage: storage} = bot_params} = conn, _opts) do
     conn |> MessageSender.delivery(storage.get(bot_params, :messages))
 
-    Conn.halt(conn)
-  end
-
-  def second_handle(conn, _opts) do
-    IO.puts("----> You have just received message <----")
     Conn.halt(conn)
   end
 
