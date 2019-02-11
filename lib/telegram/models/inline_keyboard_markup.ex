@@ -5,11 +5,11 @@ defmodule Engine.Telegram.Model.InlineKeyboardMarkup do
   [https://core.telegram.org/bots/api#inlinequery](https://core.telegram.org/bots/api#inlinequery)
   """
   alias Engine.Telegram.Model.{InlineKeyboardButton}
-#  alias Agala.Provider.Telegram.Model.{Chat}
+  #  alias Agala.Provider.Telegram.Model.{Chat}
   use Construct
 
   structure do
-    field :inline_keyboard, {:array, {:array, InlineKeyboardButton}}, default: []
-#    field :chat, Chat
+    field(:inline_keyboard, {:array, {:array, InlineKeyboardButton}}, default: [])
+    #    field :chat, Chat
   end
 end

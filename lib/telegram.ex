@@ -10,23 +10,29 @@ defmodule Engine.Telegram do
 
   use GenServer
 
-  @certificate     :agala_telegram  |> Application.get_env(:certificate)
-  @url             :agala_telegram  |> Application.get_env(:url)
+  @certificate :agala_telegram |> Application.get_env(:certificate)
+  @url :agala_telegram |> Application.get_env(:url)
   @telegram_engine :telegram_engine |> Application.get_env(Engine.Telegram)
 
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, [name: :"#Engine.Telegram::#{opts.name}"])
+    GenServer.start_link(__MODULE__, opts, name: :"#Engine.Telegram::#{opts.name}")
   end
 
   def init(opts) do
-    logger().info("Telegram bot #{opts.name} starts with this config: #{inspect(@telegram_engine)}")
+    logger().info(
+      "Telegram bot #{opts.name} starts with this config: #{inspect(@telegram_engine)}"
+    )
 
     case method = Keyword.get(@telegram_engine, :method) do
       :webhook ->
-        set_webhook(opts) |> IO.puts
+        set_webhook(opts) |> IO.puts()
         logger().info("Telegram bot #{opts.name} started. Method: #{method}")
-      :polling -> logger().info("Telegram bot #{opts.name} started. Method: #{method}")
-      _ -> nil
+
+      :polling ->
+        logger().info("Telegram bot #{opts.name} started. Method: #{method}")
+
+      _ ->
+        nil
     end
 
     {:ok, opts}
@@ -48,9 +54,14 @@ defmodule Engine.Telegram do
     case Keyword.get(@telegram_engine, :method) do
       :webhook ->
         state |> delete_webhook() |> logger().info()
-      :polling -> logger().info("Nothing to do because method polling")
-      _ -> logger().info("Nothing to do")
+
+      :polling ->
+        logger().info("Nothing to do because method polling")
+
+      _ ->
+        logger().info("Nothing to do")
     end
+
     {:reply, :ok, state}
   end
 
@@ -59,7 +70,11 @@ defmodule Engine.Telegram do
     {:noreply, state}
   end
 
-  def handle_cast({:message, _hub, %{"data" => %{"messages" => messages, "chat" => %{"id" => id}}} =  _message}, state) do
+  def handle_cast(
+        {:message, _hub,
+         %{"data" => %{"messages" => messages, "chat" => %{"id" => id}}} = _message},
+        state
+      ) do
     messages
     |> RequestHandler.parse_hub_response()
     |> Enum.filter(& &1)
@@ -77,7 +92,8 @@ defmodule Engine.Telegram do
       [{"Content-Type", "application/json"}]
     )
     |> parse_body
-#    |> resolve_updates(params)
+
+    #    |> resolve_updates(params)
   end
 
   def delete_webhook(%BotParams{name: bot_name} = params) do
@@ -130,22 +146,24 @@ defmodule Engine.Telegram do
       |> Enum.map(fn
         {key, {:file, file}} ->
           {:file, file, {"form-data", [{:name, key}, {:filename, Path.basename(file)}]}, []}
-        {key, value} -> {to_string(key), to_string(value)}
+
+        {key, value} ->
+          {to_string(key), to_string(value)}
       end)
+
     {:multipart, multipart}
   end
 
   defp webhook_upload_body(conn, opts \\ []) do
     case @certificate do
-      nil  -> %{url: server_webhook_url(conn)}
-      path -> %{certificate: {:file, path},
-                url: server_webhook_url(conn)}
+      nil -> %{url: server_webhook_url(conn)}
+      path -> %{certificate: {:file, path}, url: server_webhook_url(conn)}
     end
     |> create_body_multipart(opts)
   end
 
   defp parse_body({:ok, resp = %HTTPoison.Response{body: body}}),
-       do: {:ok, %HTTPoison.Response{resp | body: Poison.decode!(body)}}
+    do: {:ok, %HTTPoison.Response{resp | body: Poison.decode!(body)}}
 
   defp parse_body(default), do: default
 
@@ -164,7 +182,8 @@ defmodule Engine.Telegram do
            }
          },
          _bot_params
-       ), do: description
+       ),
+       do: description
 
   defp resolve_updates(
          {
@@ -175,5 +194,6 @@ defmodule Engine.Telegram do
            }
          },
          bot_params
-       ), do: bot_params
+       ),
+       do: bot_params
 end

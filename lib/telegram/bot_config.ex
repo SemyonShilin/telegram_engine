@@ -56,9 +56,14 @@ defmodule Engine.Telegram.BotConfig do
   defp parse_proxy do
     result =
       case Keyword.get(@engine_telegram, :proxy) do
-        {_, {_, _}} = config -> config
-        :env -> {:http, {System.get_env("PROXY_HOST"), String.to_integer(System.get_env("PROXY_PORT"))}}
-        _ -> nil
+        {_, {_, _}} = config ->
+          config
+
+        :env ->
+          {:http, {System.get_env("PROXY_HOST"), String.to_integer(System.get_env("PROXY_PORT"))}}
+
+        _ ->
+          nil
       end
 
     parse_proxy(result)

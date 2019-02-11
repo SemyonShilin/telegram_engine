@@ -23,20 +23,28 @@ defmodule Engine.Telegram.RequestHandler do
     conn
   end
 
-  def find_bot_handler(%Conn{
-    request_bot_params: %BotParams{storage: storage, provider_params: %{token: token}} = bot_params} = conn,
-  _opts) do
+  def find_bot_handler(
+        %Conn{
+          request_bot_params:
+            %BotParams{storage: storage, provider_params: %{token: token}} = bot_params
+        } = conn,
+        _opts
+      ) do
     bot = adapter_bot().(token)
     storage.set(bot_params, :bot, bot)
 
     conn
   end
 
-  def send_messege_to_hub_handler(%Conn{
-    request_bot_params: %Agala.BotParams{storage: storage} = bot_params,
-    request: request} = conn, _opts) do
-
+  def send_messege_to_hub_handler(
+        %Conn{
+          request_bot_params: %Agala.BotParams{storage: storage} = bot_params,
+          request: request
+        } = conn,
+        _opts
+      ) do
     bot = storage.get(bot_params, :bot)
+
     %{"data" => response} =
       %{data: request}
       |> Map.merge(%{platform: "telegram", uid: bot.uid})
@@ -47,7 +55,10 @@ defmodule Engine.Telegram.RequestHandler do
     conn
   end
 
-  def parse_hub_response_handler(%Conn{request_bot_params: %{storage: storage} = bot_params} = conn, _opts) do
+  def parse_hub_response_handler(
+        %Conn{request_bot_params: %{storage: storage} = bot_params} = conn,
+        _opts
+      ) do
     message =
       bot_params
       |> storage.get(:response)
@@ -60,7 +71,10 @@ defmodule Engine.Telegram.RequestHandler do
     conn
   end
 
-  def delivery_hub_response_handler(%Conn{request_bot_params: %{storage: storage} = bot_params} = conn, _opts) do
+  def delivery_hub_response_handler(
+        %Conn{request_bot_params: %{storage: storage} = bot_params} = conn,
+        _opts
+      ) do
     conn |> MessageSender.delivery(storage.get(bot_params, :messages))
 
     Conn.halt(conn)
@@ -79,23 +93,24 @@ defmodule Engine.Telegram.RequestHandler do
     parse_hub_response(tail, [messages | formatted_messages])
   end
 
-  defp parse_hub_response([], updated_messages), do: updated_messages |> Enum.reverse
+  defp parse_hub_response([], updated_messages), do: updated_messages |> Enum.reverse()
 
   defp format_menu_item(%{"items" => items}), do: format_menu_item(items, [])
 
   defp format_menu_item([%{"url" => url} = menu_item | tail], state) do
-    new_state =
-      [[InlineKeyboardButton.make!(%{text: menu_item["name"], url: url})]| state]
+    new_state = [[InlineKeyboardButton.make!(%{text: menu_item["name"], url: url})] | state]
     format_menu_item(tail, new_state)
   end
 
   defp format_menu_item([%{"code" => code} = menu_item | tail], state) do
-    new_state =
-      [[InlineKeyboardButton.make!(%{text: menu_item["name"], callback_data: code})] | state]
+    new_state = [
+      [InlineKeyboardButton.make!(%{text: menu_item["name"], callback_data: code})] | state
+    ]
+
     format_menu_item(tail, new_state)
   end
 
-  defp format_menu_item([], state), do: state |> Enum.reverse
+  defp format_menu_item([], state), do: state |> Enum.reverse()
 
   defp message_mapping do
     fn {k, v}, acc ->
@@ -110,18 +125,28 @@ defmodule Engine.Telegram.RequestHandler do
   defp type_menu(v, acc) do
     with %{"type" => type} <- v do
       case type do
-        "inline"   ->
-          Map.put(acc, :reply_markup, InlineKeyboardMarkup.make!(%{inline_keyboard: format_menu_item(v)}))
-        "keyboard" -> ""
-        "auth"     -> ""
-        _          -> ""
+        "inline" ->
+          Map.put(
+            acc,
+            :reply_markup,
+            InlineKeyboardMarkup.make!(%{inline_keyboard: format_menu_item(v)})
+          )
+
+        "keyboard" ->
+          ""
+
+        "auth" ->
+          ""
+
+        _ ->
+          ""
       end
     end
   end
 
   defp adapter_bot() do
     with get_bot_fn <- Telegram.get_bot_fn(),
-         {func, _}  <- Code.eval_string(get_bot_fn) do
+         {func, _} <- Code.eval_string(get_bot_fn) do
       func
     end
   end
@@ -132,11 +157,15 @@ defmodule Engine.Telegram.RequestHandler do
     end
   end
 
-  defp format_request_for_log(%{message: %{text: text, from: %{first_name: first_name, id: user_telegrma_id}}}) do
+  defp format_request_for_log(%{
+         message: %{text: text, from: %{first_name: first_name, id: user_telegrma_id}}
+       }) do
     "#{first_name} #{user_telegrma_id} : #{text}"
   end
 
-  defp format_request_for_log(%{callback_query: %{data: data, from: %{first_name: first_name, id: user_telegrma_id}}}) do
+  defp format_request_for_log(%{
+         callback_query: %{data: data, from: %{first_name: first_name, id: user_telegrma_id}}
+       }) do
     "#{first_name} #{user_telegrma_id} : button - #{data}"
   end
 end
